@@ -1,0 +1,205 @@
+1. cd frappe-bench
+
+2. create a custom app
+	bench new-app <new app_name>
+	App Title - <Title of your choice - the title will be use as first module>
+	App Description - Your description of the app
+	App Publisher - Frappe
+	App Email - Email Of Your Choice
+	App Icon - icon of your choice
+	App License - GNU General Public License
+
+3. create a new site
+	bench new-site <sitename>
+	default database password - frappe
+	set ur default admin password
+
+4. Install the new site on your custom app
+	bench --site site_name install-app app_name.
+
+	//cd sites edit {site_config.json} add "developer_mode":1
+	*******
+	To make sure, check the contents of currentsite.txt (found in the sites folder of your bench instance) and it should have SITENAME.
+	**
+
+5. set frappe to use ur new site as default site.
+	(bench use <ur new site name)
+
+6. start the app (bench start)
+
+7 connect to the files using any ftp apps(winscp)
+	protocol:sftp
+	host:localhost
+	password:frappe
+	username:frappe
+	port:3022
+
+8. edit site_config.json and set its developers mode to 1
+	sites edit {site_config.json} add "developer_mode":1
+9. edit site_config.json and set server_script_enabled to true to enable scripting.
+		sites edit {site_config.json} add "server_script_enabled":true
+
+
+
+#to download a git app
+bench get-app https://github.com/org/app_name
+
+
+bench get-app https://github.com/org/app_name
+
+bench --site site_name install-app app_name
+
+****************************
+
+Adding module.
+	create from desk view
+	add doctypes to module
+	run bench migrate
+	go to config folder under the app folder
+	app > app > config
+		1. edit desktop.py to include the module definition
+			# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from frappe import _
+
+def get_data():
+	return [
+		{
+			"module_name": "Inventory System",
+			"color": "#589494",
+			"icon": "octicon octicon-book",
+			"type": "module",
+			"label": _("Inventory System")
+		},
+		{
+			"module_name": "Store Security",
+			"color": "#589494",
+			"icon": "octicon octicon-book",
+			"type": "module",
+			"label": _("Store Security")
+		}
+	]
+
+		2. create a file as same name as the module (i.e if module name is sherif work , 
+			then create sherif_work.py in the config folder.
+			open the file and include all the doctype definitions on it.
+			from __future__ import unicode_literals
+from frappe import _
+
+def get_data():
+    return [
+      {
+        "label":_("Store Security"),
+        "icon": "octicon octicon-briefcase",
+        "items": [{
+              "type": "doctype",
+              "name": "Security Record",
+              "label": _("Security Record"),
+              "description": _("List Of All Security Personnel."),
+            }]
+      }
+  ]
+		
+	3. restart the app or (reload from deskview). the module should come up.
+
+Adding Doctype
+	is good you first create a role so you
+	can assign the role to the doctype permission.
+
+	then assign the role to the user you want to allow access to the doctype.
+
+
+Adding Button To ListView Of Doctype
+
+	in the doctype folder create a file name <doctype name>_list.js then add all the customization
+	you want to add to the doctype <menu options, button, actions>
+	examples.
+
+	Note: <Store Users> is the doctype name
+
+	frappe.listview_settings['Store Users'] = {
+    add_fields: ['first_name', 'last_name','gender'],
+	colwidths: {"first_name": 1,"last_name": 1,"phone_no": 1,"gender": 1,"email": 1,"address": 1, },
+    hide_name_column: true, // hide the last column which shows the 'name'
+    onload(listview) {
+	//filter the list
+		// if (!frappe.route_options){ //remove this condition if not required
+		// 	frappe.route_options = {
+		// 		"first_name": ["=", "Ajagu"]
+		// 	};
+		// }
+        listview.page.add_menu_item(__("Set as Open"), function() {
+			frappe.msgprint("listview.data");
+			console.log(listview)
+			
+		});
+	listview.page.add_action_item(__("Custom Action Buttons"), function() {
+			frappe.msgprint("Sherif Custom Add Action Process");
+		});
+
+		listview.page.add_menu_item(__("Set as Closed"), function() {
+			frappe.msgprint("Custom email or close");	
+
+		});
+
+		
+    },
+}
+
+Adding Button To Doctype Forms
+
+	in the doctype folder create a file name <doctype name>.js then add all the customization
+	you want to add to the doctype <menu options, button, actions>
+	examples.
+
+	Note: <Store Users> is the doctype name
+
+frappe.ui.form.on('Store Users', {
+	refresh: function(frm) {
+		frm.page.add_menu_item(__("Custom Menu Option By Sherif"), function() {
+			frappe.msgprint("Sherif Custom Add Menu Option To Menu Bar");
+			//cur_frm.print_doc();
+		});
+		frm.add_custom_button(__("Sherif Show Info"), function() {
+    			frappe.msgprint("Sherif Custom Add Button To Task Bar");
+    		});
+		frm.page.add_action_item(__("Custom Action Buttons"), function() {
+			frappe.msgprint("Sherif Custom Add Action Process");
+			//cur_frm.trigger('approve');
+		});
+		frm.page.add_action_icon(__("fa fa-envelope-o"), function() {
+			frappe.msgprint("Custom email or print");
+			new frappe.views.CommunicationComposer();
+		});
+	}
+
+});
+
+Adding code to controller
+	in the doctype folder create a file name <doctype name>.py then add all the server side script
+	you want to add to the doctype <menu options, button, actions>
+	examples.
+	all the method to access via api must have a decorator
+	@frappe.whitelist()
+
+	also the class required you have a process first thats not api white list before you define
+	your whitelisted method.
+	Also all whitelisted method must have same identation as the class
+	example.
+	
+# -*- coding: utf-8 -*-
+# Copyright (c) 2020, frappe and contributors
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
+import frappe
+from frappe import _
+from frappe.model.document import Document
+
+class StoreUsers(Document):
+	sam="store users"
+
+@frappe.whitelist()
+def get_last_project(sherif):
+	return sherif
+	# return frappe.get_all("Store Users", limit_page_lenght = 1)[0]
